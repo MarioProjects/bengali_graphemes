@@ -1,9 +1,8 @@
 from slackclient import SlackClient
 from os import environ
-from timeit import default_timer as timer
 from utils.csvlogger import *
 from file import *
-from kaggle import *
+from utils.kaggle import *
 
 
 def seed_everything(seed):
@@ -33,6 +32,9 @@ def slack_message(message, user_slack_token="SYS", channel="experimentos"):
 # ====== HENG Utils
 
 def log_message(rate, iter, epoch, kaggle, valid_loss, train_loss, batch_loss, iter_save, start_timer, mode='print'):
+    print(iter)
+    if iter == 1 or iter == 0: return ""
+
     if mode == ('print'):
         asterisk = ' '
         loss = batch_loss
@@ -65,7 +67,8 @@ def do_valid(net, valid_loader, criterion, NUM_TASK):
         truth = [t.cuda() for t in truth]
 
         with torch.no_grad():
-            logit = data_parallel(net, input)  # net(input)
+            #logit = data_parallel(net, input)  # net(input)
+            logit = net(input)  # net(input)
             probability = logit_to_probability(logit)
 
             loss = criterion(logit, truth)
@@ -385,3 +388,101 @@ class MixUpCallback(LearnerCallback):
 
     def on_train_end(self, **kwargs):
         if self.stack_y: self.learn.loss_func = self.learn.loss_func.get_old()
+
+
+# ============= LAST UTILS TRAIN SIMPLE
+
+def train(net, train_loader, optimizer, criterion):
+    net.train()
+    train_loss = np.zeros(3, np.float32)
+    sum_train_loss = np.zeros_like(train_loss)
+    sum_train = np.zeros_like(train_loss)
+
+    # for batch_idx, (inputs, targets) in enumerate(train_loader):
+    for batch_idx, (inputs, targets, infor) in enumerate(train_loader):
+        batch_size = len(infor)
+        inputs = inputs.cuda()
+        targets = [t.cuda() for t in targets]
+        optimizer.zero_grad()
+        outputs = net(inputs)
+        loss = criterion(outputs, targets)
+        (2 * loss[0] + loss[1] + loss[2]).backward()
+        optimizer.step()
+
+        loss = [l.item() for l in loss]
+        l = np.array([*loss, ]) * batch_size
+        n = np.array([1, 1, 1]) * batch_size
+        sum_train_loss += l
+        sum_train += n
+
+        if batch_idx>1:break
+
+    train_loss = sum_train_loss / (sum_train + 1e-12)
+    return train_loss
+
+
+def valid(net, valid_loader, criterion, NUM_TASK):
+    valid_loss = np.zeros(6, np.float32)
+    valid_num = np.zeros_like(valid_loss)
+
+    valid_probability = [[], [], [], ]
+    valid_truth = [[], [], [], ]
+    net.eval()
+
+    for batch_idx, (input, truth, infor) in enumerate(valid_loader):
+
+        batch_size = len(infor)
+        input = input.cuda()
+        truth = [t.cuda() for t in truth]
+
+        with torch.no_grad():
+            #logit = data_parallel(net, input)  # net(input)
+            logit = net(input)  # net(input)
+            probability = logit_to_probability(logit)
+
+            loss = criterion(logit, truth)
+            correct = metric(probability, truth)
+
+        # ---
+        loss = [l.item() for l in loss]
+        l = np.array([*loss, *correct, ]) * batch_size
+        n = np.array([1, 1, 1, 1, 1, 1]) * batch_size
+        valid_loss += l
+        valid_num += n
+
+        # ---
+        for i in range(NUM_TASK):
+            valid_probability[i].append(probability[i].data.cpu().numpy())
+            valid_truth[i].append(truth[i].data.cpu().numpy())
+
+        # print(valid_loss)
+        # print('\r %8d /%d' % (valid_num[0], len(valid_loader.dataset)), end='', flush=True)
+
+    assert (valid_num[0] == len(valid_loader.dataset))
+    valid_loss = valid_loss / (valid_num + 1e-8)
+
+    # ------
+    for i in range(NUM_TASK):
+        valid_probability[i] = np.concatenate(valid_probability[i])
+        valid_truth[i] = np.concatenate(valid_truth[i])
+    recall, avgerage_recall = compute_kaggle_metric(valid_probability, valid_truth)
+
+    return valid_loss, (recall, avgerage_recall)
+
+def show_simple_stats(log, epoch, optimizer, start_timer, kaggle, train_loss, valid_loss):
+    rate = get_learning_rate(optimizer)
+    text = '%3.0f  %0.7f  | ' % (epoch, rate,) + '%0.3f : %0.3f %0.3f %0.3f | ' % (
+        kaggle[1], *kaggle[0]) + '%4.2f, %4.2f, %4.2f : %4.2f, %4.2f, %4.2f | ' % (
+               *valid_loss,) + '%4.2f, %4.2f, %4.2f |' % (*train_loss,) + '%s' % (
+               time_to_str((timer() - start_timer), 'min'))
+
+    log.write(text)
+    log.write('\n')
+
+def scheduler_step(scheduler_type, scheduler, optimizer, epoch):
+    if scheduler_type=="one_cycle_lr":
+        scheduler.step()
+    else:
+        lr = scheduler(epoch)
+        if lr < 0: assert False, "Learning rate < 0! Stop train!"
+        adjust_learning_rate(optimizer, lr)

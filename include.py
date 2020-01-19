@@ -15,7 +15,7 @@ import matplotlib
 #matplotlib.use('WXAgg')
 #matplotlib.use('Qt4Agg')
 #matplotlib.use('Qt5Agg') #Qt4Agg
-print('matplotlib.get_backend : ', matplotlib.get_backend())
+# print('matplotlib.get_backend : ', matplotlib.get_backend())
 #print(matplotlib.__version__)
 
 

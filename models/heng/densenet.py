@@ -1,4 +1,4 @@
-from common import *
+from utils.common import *
 
 
 BatchNorm2d = nn.BatchNorm2d

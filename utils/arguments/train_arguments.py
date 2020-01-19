@@ -26,6 +26,7 @@ parser.add_argument('--criterion', type=str, default='combined_crossentropy', he
 parser.add_argument('--model_name', type=str, default='densenet121', help='Model name for training')
 parser.add_argument('--head_name', type=str, default='initial_head', help='Head name for training')
 parser.add_argument('--optimizer', type=str, default='over9000', help='Optimizer for training')
+parser.add_argument('--scheduler', type=str, default='steps', help='LR Scheduler for training')
 parser.add_argument('--loss', type=str, default='standard_loss', help='Loss for training')
 
 parser.add_argument('--data_augmentation', type=str, help='Apply data augmentations at train time')
@@ -48,14 +49,16 @@ except:
     args = parser.parse_args("")
 
 if args.output_dir == "results/new_logs":
-    args.output_dir = "results/{}/{}_{}_{}_{}_lr{}_{}x{}_mixup{}_DA{}{}_MinLr{}_MaxLr{}".format(args.model_name, 
+    args.output_dir = "results/{}/{}_{}_{}_{}_lr{}_{}to{}_mixup{}_DA{}{}_MinLr{}_MaxLr{}_{}".format(
+                                                                                args.model_name,
                                                                                 args.head_name,
                                                                                 args.model_name, args.criterion,
                                                                                 args.optimizer, args.learning_rate,
-                                                                                args.img_size, args.img_size,
+                                                                                args.img_size, args.crop_size,
                                                                                 args.mixup_alpha,
                                                                                 args.data_augmentation,
                                                                                 args.additional_info,
-                                                                                args.min_lr, args.max_lr)
+                                                                                args.min_lr, args.max_lr,
+                                                                                args.scheduler)
 
     if args.pretrained: args.output_dir = args.output_dir + "_PRETRAINED"

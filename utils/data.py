@@ -8,6 +8,14 @@ import cv2
 import albumentations
 from file import *
 
+if environ.get('BENGALI_DATA_PATH') is not None:
+    INPUT_PATH = environ.get('BENGALI_DATA_PATH')
+else:
+    assert False, "Please set the environment variable BENGALI_DATA_PATH. Read the README!"
+
+data_root = "{}/bengaliai/256_train/256/".format(INPUT_PATH)
+df = pd.read_csv("{}/train.csv".format(INPUT_PATH))
+
 
 class BengaliDataset(Dataset):
 
