@@ -3,7 +3,7 @@ from os import environ
 from utils.csvlogger import *
 from file import *
 from utils.kaggle import *
-
+from utils.radam import *
 
 def seed_everything(seed):
     random.seed(seed)
@@ -67,7 +67,7 @@ def do_valid(net, valid_loader, criterion, NUM_TASK):
         truth = [t.cuda() for t in truth]
 
         with torch.no_grad():
-            #logit = data_parallel(net, input)  # net(input)
+            # logit = data_parallel(net, input)  # net(input)
             logit = net(input)  # net(input)
             probability = logit_to_probability(logit)
 
@@ -126,6 +126,27 @@ def cross_entropy_criterion(logit, truth):
         loss.append(e)
 
     return loss
+
+
+def select_optimizer(optimizer_name, net, lr, momentum=0.0, weight_decay=0.0):
+    if optimizer_name == "over9000":
+        return Over9000(filter(lambda p: p.requires_grad, net.parameters()))
+    elif optimizer_name == "sgd":
+        return torch.optim.SGD(filter(lambda p: p.requires_grad, net.parameters()),
+                               lr=lr, momentum=momentum, weight_decay=weight_decay)
+    else:
+        assert False, "Unknown optimizer: {}".format(optimizer_name)
+
+
+def select_scheduler(scheduler_name, optimizer, min_lr, max_lr, epochs, decay=0.1, step=25):
+    from utils.onecyclelr import OneCycleLR
+    if scheduler_name == "one_cycle_lr":
+        return OneCycleLR(optimizer, num_steps=epochs, lr_range=(min_lr, max_lr))
+    elif scheduler_name == "steps":
+        return DecayScheduler(base_lr=min_lr, decay=decay, step=step)
+    else:
+        assert False, "Unknown scheduler: {}".format(scheduler_name)
+
 
 # https://stackoverflow.com/questions/43162506/undefinedmetricwarning-f-score-is-ill-defined-and-being-set-to-0-0-in-labels-wi
 def metric(probability, truth):
@@ -415,8 +436,6 @@ def train(net, train_loader, optimizer, criterion):
         sum_train_loss += l
         sum_train += n
 
-        if batch_idx>1:break
-
     train_loss = sum_train_loss / (sum_train + 1e-12)
     return train_loss
 
@@ -436,7 +455,7 @@ def valid(net, valid_loader, criterion, NUM_TASK):
         truth = [t.cuda() for t in truth]
 
         with torch.no_grad():
-            #logit = data_parallel(net, input)  # net(input)
+            # logit = data_parallel(net, input)  # net(input)
             logit = net(input)  # net(input)
             probability = logit_to_probability(logit)
 
@@ -469,6 +488,7 @@ def valid(net, valid_loader, criterion, NUM_TASK):
 
     return valid_loss, (recall, avgerage_recall)
 
+
 def show_simple_stats(log, epoch, optimizer, start_timer, kaggle, train_loss, valid_loss):
     rate = get_learning_rate(optimizer)
     text = '%3.0f  %0.7f  | ' % (epoch, rate,) + '%0.3f : %0.3f %0.3f %0.3f | ' % (
@@ -479,10 +499,27 @@ def show_simple_stats(log, epoch, optimizer, start_timer, kaggle, train_loss, va
     log.write(text)
     log.write('\n')
 
+
 def scheduler_step(scheduler_type, scheduler, optimizer, epoch):
-    if scheduler_type=="one_cycle_lr":
+    if scheduler_type == "one_cycle_lr":
         scheduler.step()
     else:
         lr = scheduler(epoch)
         if lr < 0: assert False, "Learning rate < 0! Stop train!"
         adjust_learning_rate(optimizer, lr)
+
+
+def load_from_checkpoint(net, model_checkpoint):
+    if model_checkpoint != "":
+        print("Loading model from checkpoint...")
+        # Because we used multiple GPUs training
+        state_dict = torch.load(model_checkpoint, map_location=torch.device('cpu'))
+        from collections import OrderedDict
+
+        new_state_dict = OrderedDict()
+
+        for k, v in state_dict.items():
+            name = k.replace('module.', '')  # remove `module.`
+            new_state_dict[name] = v
+
+        net.load_state_dict(new_state_dict, strict=False)

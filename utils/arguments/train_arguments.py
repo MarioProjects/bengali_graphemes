@@ -19,15 +19,22 @@ parser.add_argument('--slack_resume', action='store_true', help='Send Slack mess
 parser.add_argument('--pretrained', action='store_true', help='Wheter use pretrained on Imagenet model or not')
 parser.add_argument('--batch_size', type=int, default=64, help='Batch Size for training')
 parser.add_argument('--epochs', type=int, default=40, help='Total number epochs for training')
-parser.add_argument('--learning_rate', type=float, default=0.001, help='Learning rate')
-parser.add_argument('--min_lr', type=float, default=0.002, help='Min Learning rate')
-parser.add_argument('--max_lr', type=float, default=0.01, help='Max Learning rate')
 parser.add_argument('--criterion', type=str, default='combined_crossentropy', help='Criterion for training')
 parser.add_argument('--model_name', type=str, default='densenet121', help='Model name for training')
 parser.add_argument('--head_name', type=str, default='initial_head', help='Head name for training')
-parser.add_argument('--optimizer', type=str, default='over9000', help='Optimizer for training')
-parser.add_argument('--scheduler', type=str, default='steps', help='LR Scheduler for training')
+
 parser.add_argument('--loss', type=str, default='standard_loss', help='Loss for training')
+
+parser.add_argument('--optimizer', type=str, default='over9000', help='Optimizer for training')
+parser.add_argument('--momentum', type=float, default=0.0, help='Optimizer for training')
+parser.add_argument('--weight_decay', type=float, default=0.0, help='Optimizer for training')
+
+parser.add_argument('--scheduler', type=str, default='steps', help='LR Scheduler for training')
+parser.add_argument('--learning_rate', type=float, default=0.001, help='Learning rate')
+parser.add_argument('--min_lr', type=float, default=0.002, help='Min Learning rate')
+parser.add_argument('--max_lr', type=float, default=0.01, help='Max Learning rate')
+parser.add_argument('--scheduler_step', type=int, default=25, help='Steps ffor step scheduler')
+parser.add_argument('--scheduler_decay', type=float, default=0.1, help='Decay factor of learning rate (step scheduler)')
 
 parser.add_argument('--data_augmentation', type=str, help='Apply data augmentations at train time')
 parser.add_argument('--mixup_alpha', type=float, default=0.0, help='Alpha for Mixup. If 0, mixup is not applied')
