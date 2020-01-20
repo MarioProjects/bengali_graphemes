@@ -3,7 +3,6 @@ from .seresnext import *
 from .resnet import *
 from .efficientnet import *
 from .heads import *
-from .heng.model import *
 
 
 def model_selector(model_name, head_name, classes, pretrained=True, banglalekha=False):
@@ -20,9 +19,6 @@ def model_selector(model_name, head_name, classes, pretrained=True, banglalekha=
     if "noDrop" in head_name:
         ps = 0.0
 
-    if "desnenet121_heng_model" in model_name:
-        model = Net().cuda()
-        return model
     if "densenet121" in model_name:
         model = Dnet_1ch(head, classes=classes, ps=ps, pretrained=pretrained)
         return model

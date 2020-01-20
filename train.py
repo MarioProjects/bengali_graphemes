@@ -33,7 +33,7 @@ net = torch.nn.DataParallel(net, device_ids=range(torch.cuda.device_count()))
 load_from_checkpoint(net, args.model_checkpoint)
 
 optimizer = select_optimizer(args.optimizer, net, lr=args.learning_rate, momentum=args.momentum, weight_decay=args.weight_decay)
-scheduler = select_scheduler(args.scheduler, optimizer, args.min_lr, args.max_lr, args.epochs, decay=args.scheduler_decay, step=args.scheduler_step)
+scheduler = select_scheduler(args.scheduler, optimizer, args.min_lr, args.max_lr, epochs=args.epochs, decay=args.scheduler_decay, step=args.scheduler_step)
 criterion = select_criterion(args.criterion)
 
 log = Logger()
@@ -52,7 +52,26 @@ for epoch in range(args.epochs):
         torch.save(net.state_dict(), out_dir + '/checkpoint/best_model.pth')
 
     # learning rate scheduler -------------
-    scheduler_step(args.scheduler, scheduler, optimizer, epoch)
+    if epoch < args.epochs-1:  # Prevent step on last epoch
+        scheduler_step(args.scheduler, scheduler, optimizer, epoch)
+
+
+## Extend train with last learning rate (following one_cylcle_lr)
+scheduler = select_scheduler("steps", optimizer, get_learning_rate(optimizer), -1, step=args.epochs//7, decay=0.5)
+scheduler_step("steps", scheduler, optimizer, epoch=0)  # To assign new learning rate to optimizer
+for epoch in range(args.epochs//4):
+    train_loss = train(net, train_loader, optimizer, criterion)
+    valid_loss, kaggle = valid(net, valid_loader, criterion, NUM_TASK)
+
+    show_simple_stats(log, epoch, optimizer, start_timer, kaggle, train_loss, valid_loss)
+
+    if kaggle[1] > best_metric:
+        best_metric = kaggle[1]
+        torch.save(net.state_dict(), out_dir + '/checkpoint/best_model.pth')
+
+    # learning rate scheduler -------------
+    scheduler_step("steps", scheduler, optimizer, epoch)
+
 
 torch.save(net.state_dict(), out_dir + '/checkpoint/last_model.pth')
 log.write('\n')

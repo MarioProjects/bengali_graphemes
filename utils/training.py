@@ -138,7 +138,7 @@ def select_optimizer(optimizer_name, net, lr, momentum=0.0, weight_decay=0.0):
         assert False, "Unknown optimizer: {}".format(optimizer_name)
 
 
-def select_scheduler(scheduler_name, optimizer, min_lr, max_lr, epochs, decay=0.1, step=25):
+def select_scheduler(scheduler_name, optimizer, min_lr, max_lr, epochs=100, decay=0.1, step=25):
     from utils.onecyclelr import OneCycleLR
     if scheduler_name == "one_cycle_lr":
         return OneCycleLR(optimizer, num_steps=epochs, lr_range=(min_lr, max_lr))
