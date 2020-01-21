@@ -81,11 +81,11 @@ def initial_logs_simple(log, out_dir, COMMON_STRING, IDENTIFIER, SEED, initial_c
     ## start training here! ##############################################
     log.write('** START TRAINING HERE! **\n\n\n')
     log.write(
-        '                |----------------------- VALID------------------------------------|------- TRAIN/BATCH -----------\n')
+        '                |----------------------- VALID------------------------------------|------- TRAIN/BATCH ----\n')
     log.write(
-        'epoch     rate  | kaggle                    | loss               acc              | loss             | time       \n')
+        'epoch     rate  | kaggle                    | loss               acc              | loss   | time       \n')
     log.write(
-        '----------------------------------------------------------------------------------------------------------------------\n')
+        '-----------------------------------------------------------------------------------------------------------\n')
 
 def check_iter(log, out_dir, start_iter, iter, iter_valid, iter_save, iter_log, train_loss, batch_loss,
                start_timer, rate, epoch, net, valid_loader, criterion, NUM_TASK, valid_loss, kaggle):

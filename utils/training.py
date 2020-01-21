@@ -413,28 +413,43 @@ class MixUpCallback(LearnerCallback):
 
 # ============= LAST UTILS TRAIN SIMPLE
 
-def train(net, train_loader, optimizer, criterion):
+def train(net, train_loader, optimizer, criterion, mixup_prob, mixup_alpha, cutmix_prob, cutmix_alpha):
     net.train()
-    train_loss = np.zeros(3, np.float32)
-    sum_train_loss = np.zeros_like(train_loss)
-    sum_train = np.zeros_like(train_loss)
+    sum_train_loss = 0
+    sum_train = 0
 
     # for batch_idx, (inputs, targets) in enumerate(train_loader):
-    for batch_idx, (inputs, targets, infor) in enumerate(train_loader):
-        batch_size = len(infor)
+    for batch_idx, (inputs, targets) in enumerate(train_loader):
+        batch_size = len(inputs)
         inputs = inputs.cuda()
         targets = [t.cuda() for t in targets]
         optimizer.zero_grad()
-        outputs = net(inputs)
-        loss = criterion(outputs, targets)
-        (2 * loss[0] + loss[1] + loss[2]).backward()
-        optimizer.step()
 
-        loss = [l.item() for l in loss]
-        l = np.array([*loss, ]) * batch_size
-        n = np.array([1, 1, 1]) * batch_size
-        sum_train_loss += l
-        sum_train += n
+        if np.random.rand() < mixup_prob:
+            images, targets = mixup(inputs, targets[0], targets[1], targets[2], mixup_alpha)
+            outputs = net(images)
+            loss = mixup_criterion(outputs[0], outputs[1], outputs[2], targets)
+            loss.backward()
+            optimizer.step()
+            sum_train_loss += loss.item()
+        else:
+            if mixup_prob + cutmix_prob == 1.0 or np.random.rand() < cutmix_prob:
+                images, targets = cutmix(inputs, targets[0], targets[1], targets[2], cutmix_alpha)
+                outputs = net(images)
+                loss = cutmix_criterion(outputs[0], outputs[1], outputs[2], targets)
+                loss.backward()
+                optimizer.step()
+                sum_train_loss += loss.item()
+            else:
+                outputs = net(inputs)
+                loss = criterion(outputs, targets)
+                (2 * loss[0] + loss[1] + loss[2]).backward()
+                optimizer.step()
+                sum_train_loss += (loss[0].item() + loss[1].item() + loss[2].item())
+
+        sum_train += batch_size
+
+        if batch_idx>1:break
 
     train_loss = sum_train_loss / (sum_train + 1e-12)
     return train_loss
@@ -448,15 +463,15 @@ def valid(net, valid_loader, criterion, NUM_TASK):
     valid_truth = [[], [], [], ]
     net.eval()
 
-    for batch_idx, (input, truth, infor) in enumerate(valid_loader):
+    for batch_idx, (inputs, truth) in enumerate(valid_loader):
 
-        batch_size = len(infor)
-        input = input.cuda()
+        batch_size = len(inputs)
+        inputs = inputs.cuda()
         truth = [t.cuda() for t in truth]
 
         with torch.no_grad():
             # logit = data_parallel(net, input)  # net(input)
-            logit = net(input)  # net(input)
+            logit = net(inputs)  # net(input)
             probability = logit_to_probability(logit)
 
             loss = criterion(logit, truth)
@@ -493,7 +508,7 @@ def show_simple_stats(log, epoch, optimizer, start_timer, kaggle, train_loss, va
     rate = get_learning_rate(optimizer)
     text = '%3.0f  %0.7f  | ' % (epoch, rate,) + '%0.3f : %0.3f %0.3f %0.3f | ' % (
         kaggle[1], *kaggle[0]) + '%4.2f, %4.2f, %4.2f : %4.2f, %4.2f, %4.2f | ' % (
-               *valid_loss,) + '%4.2f, %4.2f, %4.2f |' % (*train_loss,) + '%s' % (
+               *valid_loss,) + '%4.4f |' % train_loss + '%s' % (
                time_to_str((timer() - start_timer), 'min'))
 
     log.write(text)
@@ -526,3 +541,76 @@ def load_from_checkpoint(net, model_checkpoint):
                 new_state_dict[name] = v
 
             net.load_state_dict(new_state_dict, strict=True)
+
+
+# ======================
+# CutMix and Mixup -> https://www.kaggle.com/c/bengaliai-cv19/discussion/126504
+
+def rand_bbox(size, lam):
+    W = size[2]
+    H = size[3]
+    cut_rat = np.sqrt(1. - lam)
+    cut_w = np.int(W * cut_rat)
+    cut_h = np.int(H * cut_rat)
+
+    # uniform
+    cx = np.random.randint(W)
+    cy = np.random.randint(H)
+
+    bbx1 = np.clip(cx - cut_w // 2, 0, W)
+    bby1 = np.clip(cy - cut_h // 2, 0, H)
+    bbx2 = np.clip(cx + cut_w // 2, 0, W)
+    bby2 = np.clip(cy + cut_h // 2, 0, H)
+
+    return bbx1, bby1, bbx2, bby2
+
+
+def cutmix(data, targets1, targets2, targets3, alpha):
+    indices = torch.randperm(data.size(0))
+    shuffled_data = data[indices]
+    shuffled_targets1 = targets1[indices]
+    shuffled_targets2 = targets2[indices]
+    shuffled_targets3 = targets3[indices]
+
+    lam = np.random.beta(alpha, alpha)
+    bbx1, bby1, bbx2, bby2 = rand_bbox(data.size(), lam)
+    data[:, :, bbx1:bbx2, bby1:bby2] = data[indices, :, bbx1:bbx2, bby1:bby2]
+    # adjust lambda to exactly match pixel ratio
+    lam = 1 - ((bbx2 - bbx1) * (bby2 - bby1) / (data.size()[-1] * data.size()[-2]))
+
+    targets = [targets1, shuffled_targets1, targets2, shuffled_targets2, targets3, shuffled_targets3, lam]
+    return data, targets
+
+
+def cutmix_criterion(preds1, preds2, preds3, targets):
+    targets1, targets2, targets3, targets4, targets5, targets6, lam = targets[0], targets[1], targets[2], targets[3], \
+                                                                      targets[4], targets[5], targets[6]
+    criterion = nn.CrossEntropyLoss(reduction='mean')
+    return lam * criterion(preds1, targets1) + (1 - lam) * criterion(preds1, targets2) + lam * criterion(preds2,
+                                                                                                         targets3) + (
+                   1 - lam) * criterion(preds2, targets4) + lam * criterion(preds3, targets5) + (
+                   1 - lam) * criterion(preds3, targets6)
+
+
+def mixup(data, targets1, targets2, targets3, alpha):
+    indices = torch.randperm(data.size(0))
+    shuffled_data = data[indices]
+    shuffled_targets1 = targets1[indices]
+    shuffled_targets2 = targets2[indices]
+    shuffled_targets3 = targets3[indices]
+
+    lam = np.random.beta(alpha, alpha)
+    data = data * lam + shuffled_data * (1 - lam)
+    targets = [targets1, shuffled_targets1, targets2, shuffled_targets2, targets3, shuffled_targets3, lam]
+
+    return data, targets
+
+
+def mixup_criterion(preds1, preds2, preds3, targets):
+    targets1, targets2, targets3, targets4, targets5, targets6, lam = targets[0], targets[1], targets[2], targets[3], \
+                                                                      targets[4], targets[5], targets[6]
+    criterion = nn.CrossEntropyLoss(reduction='mean')
+    return lam * criterion(preds1, targets1) + (1 - lam) * criterion(preds1, targets2) + lam * criterion(preds2,
+                                                                                                         targets3) + (
+                   1 - lam) * criterion(preds2, targets4) + lam * criterion(preds3, targets5) + (
+                   1 - lam) * criterion(preds3, targets6)

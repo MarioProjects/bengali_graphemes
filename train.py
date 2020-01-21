@@ -42,7 +42,7 @@ initial_logs_simple(log, out_dir, COMMON_STRING, IDENTIFIER, SEED, args.model_ch
 
 start_timer, best_metric = timer(), 0
 for epoch in range(args.epochs):
-    train_loss = train(net, train_loader, optimizer, criterion)
+    train_loss = train(net, train_loader, optimizer, criterion, args.mixup_prob, args.mixup_alpha, args.cutmix_prob, args.cutmix_alpha)
     valid_loss, kaggle = valid(net, valid_loader, criterion, NUM_TASK)
 
     show_simple_stats(log, epoch, optimizer, start_timer, kaggle, train_loss, valid_loss)
@@ -56,11 +56,12 @@ for epoch in range(args.epochs):
         scheduler_step(args.scheduler, scheduler, optimizer, epoch)
 
 
+"""
 ## Extend train with last learning rate (following one_cylcle_lr)
 scheduler = select_scheduler("steps", optimizer, get_learning_rate(optimizer), -1, step=args.epochs//7, decay=0.5)
 scheduler_step("steps", scheduler, optimizer, epoch=0)  # To assign new learning rate to optimizer
 for epoch in range(args.epochs//4):
-    train_loss = train(net, train_loader, optimizer, criterion)
+    train_loss = train(net, train_loader, optimizer, criterion, args.mixup_prob, args.mixup_alpha, args.cutmix_prob, args.cutmix_alpha)
     valid_loss, kaggle = valid(net, valid_loader, criterion, NUM_TASK)
 
     show_simple_stats(log, epoch, optimizer, start_timer, kaggle, train_loss, valid_loss)
@@ -71,7 +72,7 @@ for epoch in range(args.epochs//4):
 
     # learning rate scheduler -------------
     scheduler_step("steps", scheduler, optimizer, epoch)
-
+"""
 
 torch.save(net.state_dict(), out_dir + '/checkpoint/last_model.pth')
 log.write('\n')

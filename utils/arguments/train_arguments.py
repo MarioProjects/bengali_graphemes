@@ -37,7 +37,10 @@ parser.add_argument('--scheduler_step', type=int, default=25, help='Steps ffor s
 parser.add_argument('--scheduler_decay', type=float, default=0.1, help='Decay factor of learning rate (step scheduler)')
 
 parser.add_argument('--data_augmentation', type=str, help='Apply data augmentations at train time')
-parser.add_argument('--mixup_alpha', type=float, default=0.0, help='Alpha for Mixup. If 0, mixup is not applied')
+parser.add_argument('--mixup_alpha', type=float, default=0.4, help='Alpha for Mixup. If 0, mixup is not applied')
+parser.add_argument('--mixup_prob', type=float, default=0.5, help='Probability to apply mixup (if mixup_alpha > 0)')
+parser.add_argument('--cutmix_alpha', type=float, default=0.4, help='Alpha for Cumtix. If 0, cutmix is not applied')
+parser.add_argument('--cutmix_prob', type=float, default=0.5, help='Probability to apply cutmix (if cutmix_alpha > 0)')
 parser.add_argument('--crop_size', type=int, default=224, help='Center crop squared size')
 parser.add_argument('--img_size', type=int, default=224, help='Final img squared size')
 
@@ -55,6 +58,7 @@ except:
     print("Working with Jupyter notebook! (Default Arguments)")
     args = parser.parse_args("")
 
+if args.mixup_prob + args.cutmix_prob > 1.0: assert False, "Is not possible Mixup + Cutmix probability > 1!"
 if args.output_dir == "results/new_logs":
     args.output_dir = "results/{}/{}_{}_{}_{}_lr{}_{}to{}_mixup{}_DA{}{}_MinLr{}_MaxLr{}_{}".format(
                                                                                 args.model_name,

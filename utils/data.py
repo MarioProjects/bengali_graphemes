@@ -46,22 +46,23 @@ class BengaliDataset(Dataset):
 
         image_id = os.path.join(self.data_path, image_id + '.png')
 
-        image = cv2.imread(image_id, 0)
-        image = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
+        # image = cv2.imread(image_id, 0)
+        # image = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
+        image = cv2.imread(image_id)
         image = image.astype(np.float32) / 255
         label = [grapheme_root, vowel_diacritic, consonant_diacritic]
 
-        infor = Struct(
-            index=index,
-            image_id=image_id,
-        )
+        # infor = Struct(
+        #    index=index,
+        #   image_id=image_id,
+        # )
 
         if self.augment is None:
-            return image, label, infor
+            return image, label
         else:
             # return self.augment(image, label, infor)  # For Heng Augment
             image = self.augment(image=image)["image"]
-            return image, label, infor  # For Albumentations
+            return image, label  # For Albumentations
 
 
 def null_collate(batch):
@@ -69,11 +70,11 @@ def null_collate(batch):
 
     input = []
     label = []
-    infor = []
+    # infor = []
     for b in range(batch_size):
         input.append(batch[b][0])
         label.append(batch[b][1])
-        infor.append(batch[b][-1])
+        # infor.append(batch[b][-1])
 
     input = np.stack(input)
     # input = input[...,::-1].copy()
@@ -86,7 +87,7 @@ def null_collate(batch):
     truth = torch.from_numpy(label).long()
     truth0, truth1, truth2 = truth[:, 0], truth[:, 1], truth[:, 2]
     truth = [truth0, truth1, truth2]
-    return input, truth, infor
+    return input, truth  # , infor
 
 
 # ======================
@@ -111,6 +112,7 @@ def da_policy_None(img_size):
     ])
 
     return train_da, val_da
+
 
 # def da_policy_DA1():
 #     return get_transforms(do_flip=False, max_warp=0.2, max_zoom=1.25)
