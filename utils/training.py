@@ -449,8 +449,6 @@ def train(net, train_loader, optimizer, criterion, mixup_prob, mixup_alpha, cutm
 
         sum_train += batch_size
 
-        if batch_idx>1:break
-
     train_loss = sum_train_loss / (sum_train + 1e-12)
     return train_loss
 
