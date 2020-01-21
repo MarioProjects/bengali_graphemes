@@ -510,16 +510,19 @@ def scheduler_step(scheduler_type, scheduler, optimizer, epoch):
 
 
 def load_from_checkpoint(net, model_checkpoint):
-    if model_checkpoint != "":
-        print("Loading model from checkpoint...")
-        # Because we used multiple GPUs training
-        state_dict = torch.load(model_checkpoint, map_location=torch.device('cpu'))
-        from collections import OrderedDict
+    try:
+        state_dict = torch.load(model_checkpoint)
+        net.load_state_dict(state_dict, strict=True)
+    except:
+        if model_checkpoint != "":
+            # Because we used multiple GPUs training
+            state_dict = torch.load(model_checkpoint, map_location=torch.device('cpu'))
+            from collections import OrderedDict
 
-        new_state_dict = OrderedDict()
+            new_state_dict = OrderedDict()
 
-        for k, v in state_dict.items():
-            name = k.replace('module.', '')  # remove `module.`
-            new_state_dict[name] = v
+            for k, v in state_dict.items():
+                name = k.replace('module.', '')  # remove `module.`
+                new_state_dict[name] = v
 
-        net.load_state_dict(new_state_dict, strict=False)
+            net.load_state_dict(new_state_dict, strict=True)

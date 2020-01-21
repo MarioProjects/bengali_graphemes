@@ -29,8 +29,8 @@ valid_loader = DataLoader(valid_dataset, sampler=SequentialSampler(valid_dataset
                           drop_last=False, num_workers=4, pin_memory=True, collate_fn=null_collate)
 
 net = model_selector(args.model_name, args.head_name, [168, 11, 7], pretrained=args.pretrained).cuda()
-net = torch.nn.DataParallel(net, device_ids=range(torch.cuda.device_count()))
 load_from_checkpoint(net, args.model_checkpoint)
+net = torch.nn.DataParallel(net, device_ids=range(torch.cuda.device_count()))
 
 optimizer = select_optimizer(args.optimizer, net, lr=args.learning_rate, momentum=args.momentum, weight_decay=args.weight_decay)
 scheduler = select_scheduler(args.scheduler, optimizer, args.min_lr, args.max_lr, epochs=args.epochs, decay=args.scheduler_decay, step=args.scheduler_step)
