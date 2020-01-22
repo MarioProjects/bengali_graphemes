@@ -22,9 +22,11 @@ mixup_alpha=0.4
 cutmix_prob=0.5
 cutmix_alpha=1.0
 
+grad_clipping=1.0  # No clip -> 9999
+
 CUDA_VISIBLE_DEVICES=0,1 python3 -u train.py --epochs $epochs --batch_size $batch_size --scheduler $scheduler \
     --img_size $img_size --crop_size $crop_size --criterion $criterion \
-    --slack_resume --data_augmentation $data_augmentation \
+    --slack_resume --data_augmentation $data_augmentation --grad_clipping $grad_clipping \
     --model_name $model --head_name $head --validation_size $validation_size \
     --min_lr $min_lr --max_lr $max_lr --learning_rate $lr --optimizer $optimizer \
     --mixup_prob $mixup_prob --mixup_alpha $mixup_alpha --cutmix_prob $cutmix_prob --cutmix_alpha $cutmix_alpha

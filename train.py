@@ -37,12 +37,13 @@ scheduler = select_scheduler(args.scheduler, optimizer, args.min_lr, args.max_lr
 criterion = select_criterion(args.criterion)
 
 log = Logger()
-initial_logs_simple(log, out_dir, COMMON_STRING, IDENTIFIER, SEED, args.model_checkpoint,
-             args.batch_size, train_dataset, valid_dataset, optimizer, scheduler, net, args.epochs)
+initial_logs_simple(log, out_dir, COMMON_STRING, IDENTIFIER, SEED, args.model_checkpoint, args.batch_size,
+                    train_dataset, valid_dataset, optimizer, scheduler, net, args.epochs, args.grad_clipping)
 
 start_timer, best_metric = timer(), 0
 for epoch in range(args.epochs):
-    train_loss = train(net, train_loader, optimizer, criterion, args.mixup_prob, args.mixup_alpha, args.cutmix_prob, args.cutmix_alpha)
+    train_loss = train(net, train_loader, optimizer, criterion, args.mixup_prob, args.mixup_alpha,
+                       args.cutmix_prob, args.cutmix_alpha, args.grad_clipping)
     valid_loss, kaggle = valid(net, valid_loader, criterion, NUM_TASK)
 
     show_simple_stats(log, epoch, optimizer, start_timer, kaggle, train_loss, valid_loss)
@@ -55,24 +56,6 @@ for epoch in range(args.epochs):
     if epoch < args.epochs-1:  # Prevent step on last epoch
         scheduler_step(args.scheduler, scheduler, optimizer, epoch)
 
-
-"""
-## Extend train with last learning rate (following one_cylcle_lr)
-scheduler = select_scheduler("steps", optimizer, get_learning_rate(optimizer), -1, step=args.epochs//7, decay=0.5)
-scheduler_step("steps", scheduler, optimizer, epoch=0)  # To assign new learning rate to optimizer
-for epoch in range(args.epochs//4):
-    train_loss = train(net, train_loader, optimizer, criterion, args.mixup_prob, args.mixup_alpha, args.cutmix_prob, args.cutmix_alpha)
-    valid_loss, kaggle = valid(net, valid_loader, criterion, NUM_TASK)
-
-    show_simple_stats(log, epoch, optimizer, start_timer, kaggle, train_loss, valid_loss)
-
-    if kaggle[1] > best_metric:
-        best_metric = kaggle[1]
-        torch.save(net.state_dict(), out_dir + '/checkpoint/best_model.pth')
-
-    # learning rate scheduler -------------
-    scheduler_step("steps", scheduler, optimizer, epoch)
-"""
 
 torch.save(net.state_dict(), out_dir + '/checkpoint/last_model.pth')
 log.write('\n')

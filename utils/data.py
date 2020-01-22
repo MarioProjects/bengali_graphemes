@@ -39,18 +39,17 @@ class BengaliDataset(Dataset):
 
     def __getitem__(self, index):
         # print(index)
-        image_id = self.image_ids[index]
+
         grapheme_root = self.grapheme_roots[index]
         vowel_diacritic = self.vowel_diacritics[index]
         consonant_diacritic = self.consonant_diacritics[index]
+        label = [grapheme_root, vowel_diacritic, consonant_diacritic]
 
+        image_id = self.image_ids[index]
         image_id = os.path.join(self.data_path, image_id + '.png')
 
-        # image = cv2.imread(image_id, 0)
-        # image = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
         image = cv2.imread(image_id)
         image = image.astype(np.float32) / 255
-        label = [grapheme_root, vowel_diacritic, consonant_diacritic]
 
         # infor = Struct(
         #    index=index,

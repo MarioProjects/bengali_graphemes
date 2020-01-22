@@ -45,7 +45,7 @@ def initial_logs(log, out_dir, COMMON_STRING, IDENTIFIER, SEED, initial_checkpoi
 
 
 def initial_logs_simple(log, out_dir, COMMON_STRING, IDENTIFIER, SEED, initial_checkpoint,
-                 batch_size, train_dataset, valid_dataset, optimizer, scheduler, net, epochs):
+                 batch_size, train_dataset, valid_dataset, optimizer, scheduler, net, epochs, grad_clip):
 
     log.open(out_dir + '/log.train.txt', mode='a')
     log.write('\n--- [START %s] %s\n\n' % (IDENTIFIER, '-' * 64))
@@ -76,6 +76,9 @@ def initial_logs_simple(log, out_dir, COMMON_STRING, IDENTIFIER, SEED, initial_c
     log.write('scheduler\n  %s\n' % (scheduler))
     log.write('\nepochs=%d\n' % (epochs))
     log.write('batch_size=%d\n' % (batch_size))
+    if grad_clip != 9999:
+        log.write('grad_clip=%d\n' % (grad_clip))
+    else: log.write('grad_clip=None\n')
     log.write('\n')
 
     ## start training here! ##############################################
