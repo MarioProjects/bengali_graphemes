@@ -95,6 +95,8 @@ def null_collate(batch):
 def data_augmentation_selector(da_policy, img_size, crop_size):
     if da_policy is None or da_policy == "None":
         return da_policy_None(img_size)
+    elif da_policy == "da7b":
+        return da_policy_DA7b(crop_size)
     elif da_policy == "da7":
         return da_policy_DA7(img_size, crop_size)
     elif da_policy == "da8":
@@ -146,6 +148,30 @@ def da_policy_None(img_size):
 #         brightness(change=(0.33, 0.68), p=.5),
 #     ]
 #     return get_transforms(do_flip=False, max_warp=0.25, max_zoom=1.25, max_rotate=17, xtra_tfms=additional_aug)
+
+def da_policy_DA7b(crop_size):
+    # additional_aug = [*
+    #     zoom_crop(scale=(0.85, 1.15), do_rand=True),
+    #     cutout(n_holes=(1, 2), length=(32, 84), p=.5),
+    #     brightness(change=(0.33, 0.68), p=.5),
+    #     contrast(scale=(0.7, 1.4), p=.5),
+    # ]
+    # return get_transforms(do_flip=False, max_warp=0.25, max_zoom=1.25, max_rotate=17, xtra_tfms=additional_aug)
+
+    train_da = albumentations.Compose([
+        albumentations.ShiftScaleRotate(scale_limit=0.15, rotate_limit=0),
+        albumentations.Resize(crop_size, crop_size),
+        albumentations.CoarseDropout(p=0.5, min_holes=1, max_holes=2,
+                                     min_width=16, min_height=16, max_width=64, max_height=64),
+        albumentations.RandomBrightnessContrast(p=0.5, brightness_limit=0.2, contrast_limit=0.25),
+        albumentations.Rotate(p=0.5, limit=17)
+    ])
+
+    val_da = albumentations.Compose([
+        albumentations.Resize(crop_size, crop_size)
+    ])
+
+    return train_da, val_da
 
 
 def da_policy_DA7(img_size, crop_size):

@@ -74,5 +74,5 @@ if args.output_dir == "results/new_logs":
                                                                                 args.min_lr, args.max_lr,
                                                                                 args.scheduler)
 
-    if args.grad_clipping != 9999: args.output_dir = args.output_dir + "_gradClipping".format(args.grad_clipping)
+    if args.grad_clipping != 9999: args.output_dir = args.output_dir + "_gradClipping{}".format(args.grad_clipping)
     if args.pretrained: args.output_dir = args.output_dir + "_PRETRAINED"
