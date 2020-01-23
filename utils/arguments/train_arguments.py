@@ -15,7 +15,6 @@ parser = argparse.ArgumentParser(
     formatter_class=SmartFormatter)
 
 parser.add_argument('--slack_resume', action='store_true', help='Send Slack message when train finish')
-# parser.add_argument('--clip_grad', action='store_true', help='Wheter clip grad or learner to 1.0')
 parser.add_argument('--pretrained', action='store_true', help='Wheter use pretrained on Imagenet model or not')
 parser.add_argument('--batch_size', type=int, default=64, help='Batch Size for training')
 parser.add_argument('--epochs', type=int, default=40, help='Total number epochs for training')

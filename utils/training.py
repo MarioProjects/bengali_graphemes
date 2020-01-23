@@ -431,7 +431,6 @@ def train(net, train_loader, optimizer, criterion, mixup_prob, mixup_alpha, cutm
     sum_train_loss = 0
     sum_train = 0
 
-    # for batch_idx, (inputs, targets) in enumerate(train_loader):
     for batch_idx, (inputs, targets) in enumerate(train_loader):
         batch_size = len(inputs)
         inputs = inputs.cuda()
@@ -444,7 +443,7 @@ def train(net, train_loader, optimizer, criterion, mixup_prob, mixup_alpha, cutm
             loss = mixup_criterion(outputs[0], outputs[1], outputs[2], targets)
             loss.backward()
             if clipping != 9999:  # Gradient clipping
-                torch.nn.utils.clip_grad_norm(net.parameters(), clipping)
+                torch.nn.utils.clip_grad_norm_(net.parameters(), clipping)
             optimizer.step()
             sum_train_loss += loss.item()
         else:
@@ -454,7 +453,7 @@ def train(net, train_loader, optimizer, criterion, mixup_prob, mixup_alpha, cutm
                 loss = cutmix_criterion(outputs[0], outputs[1], outputs[2], targets)
                 loss.backward()
                 if clipping != 9999:  # Gradient clipping
-                    torch.nn.utils.clip_grad_norm(net.parameters(), clipping)
+                    torch.nn.utils.clip_grad_norm_(net.parameters(), clipping)
                 optimizer.step()
                 sum_train_loss += loss.item()
             else:
@@ -463,7 +462,7 @@ def train(net, train_loader, optimizer, criterion, mixup_prob, mixup_alpha, cutm
                 (2 * loss[0] + loss[1] + loss[2]).backward()
                 optimizer.step()
                 if clipping != 9999:  # Gradient clipping
-                    torch.nn.utils.clip_grad_norm(net.parameters(), clipping)
+                    torch.nn.utils.clip_grad_norm_(net.parameters(), clipping)
                 sum_train_loss += (loss[0].item() + loss[1].item() + loss[2].item())
 
         sum_train += batch_size

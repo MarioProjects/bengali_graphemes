@@ -79,6 +79,16 @@ def initial_logs_simple(log, out_dir, COMMON_STRING, IDENTIFIER, SEED, initial_c
     log.write('batch_size=%d\n' % (batch_size))
     log.write('\n')
 
+    log.write('mixup_prob=%1.2f\n' % (mixup_prob))
+    log.write('mixup_alpha=%1.2f\n' % (mixup_alpha))
+    log.write('cutmix_prob=%1.2f\n' % (cutmix_prob))
+    log.write('cutmix_alpha=%1.2f\n' % (cutmix_alpha))
+    if grad_clip != 9999:
+        log.write('grad_clip=%f\n' % (grad_clip))
+    else:
+        log.write('NO grad_clip')
+    log.write('\n')
+
     ## start training here! ##############################################
     log.write('** START TRAINING HERE! **\n\n\n')
     log.write(
