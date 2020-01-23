@@ -44,6 +44,8 @@ parser.add_argument('--cutmix_prob', type=float, default=0.5, help='Probability 
 parser.add_argument('--crop_size', type=int, default=224, help='Center crop squared size')
 parser.add_argument('--img_size', type=int, default=224, help='Final img squared size')
 
+parser.add_argument('--grad_clipping', type=float, default=9999, help='Gradient clipping value (9999 == disabled)')
+
 parser.add_argument('--model_checkpoint', type=str, default="", help='Where is the model checkpoint saved')
 # parser.add_argument('--defrost_epoch', type=int, default=-1, help='Number of epochs to defrost the model')
 parser.add_argument('--validation_size', type=float, default=0.2, help='Validation partition size')
@@ -72,4 +74,5 @@ if args.output_dir == "results/new_logs":
                                                                                 args.min_lr, args.max_lr,
                                                                                 args.scheduler)
 
+    if args.grad_clipping != 9999: args.output_dir = args.output_dir + "_gradClipping{}".format(args.grad_clipping)
     if args.pretrained: args.output_dir = args.output_dir + "_PRETRAINED"

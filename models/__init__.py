@@ -22,6 +22,9 @@ def model_selector(model_name, head_name, classes, pretrained=True, banglalekha=
     if "densenet121" in model_name:
         model = Dnet_1ch(head, classes=classes, ps=ps, pretrained=pretrained)
         return model
+    elif "magicseresnext101" in model_name:
+        model = MagicSeresnext101(head, classes=classes, ps=ps, pretrained=pretrained)
+        return model
     elif "seresnext101" in model_name:
         if banglalekha: model = Seresnext101Banglalekha(head, classes=classes, ps=ps, pretrained=pretrained)
         else: model = Seresnext101(head, classes=classes, ps=ps, pretrained=pretrained)

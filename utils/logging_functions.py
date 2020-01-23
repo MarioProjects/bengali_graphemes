@@ -46,7 +46,7 @@ def initial_logs(log, out_dir, COMMON_STRING, IDENTIFIER, SEED, initial_checkpoi
 
 def initial_logs_simple(log, out_dir, COMMON_STRING, IDENTIFIER, SEED, initial_checkpoint,
                  batch_size, train_dataset, valid_dataset, optimizer, scheduler, net, epochs,
-                 mixup_prob, mixup_alpha, cutmix_prob, cutmix_alpha):
+                 mixup_prob, mixup_alpha, cutmix_prob, cutmix_alpha, grad_clip):
 
     log.open(out_dir + '/log.train.txt', mode='a')
     log.write('\n--- [START %s] %s\n\n' % (IDENTIFIER, '-' * 64))
@@ -77,12 +77,6 @@ def initial_logs_simple(log, out_dir, COMMON_STRING, IDENTIFIER, SEED, initial_c
     log.write('scheduler\n  %s\n' % (scheduler))
     log.write('\nepochs=%d\n' % (epochs))
     log.write('batch_size=%d\n' % (batch_size))
-    log.write('\n')
-
-    log.write('mixup_prob=%f\n' % (mixup_prob))
-    log.write('mixup_alpha=%f\n' % (mixup_alpha))
-    log.write('cutmix_prob=%f\n' % (cutmix_prob))
-    log.write('cutmix_alpha=%f\n' % (cutmix_alpha))
     log.write('\n')
 
     ## start training here! ##############################################

@@ -413,7 +413,20 @@ class MixUpCallback(LearnerCallback):
 
 # ============= LAST UTILS TRAIN SIMPLE
 
-def train(net, train_loader, optimizer, criterion, mixup_prob, mixup_alpha, cutmix_prob, cutmix_alpha):
+def train(net, train_loader, optimizer, criterion, mixup_prob, mixup_alpha, cutmix_prob, cutmix_alpha, clipping):
+    """
+
+    :param net:
+    :param train_loader:
+    :param optimizer:
+    :param criterion:
+    :param mixup_prob:
+    :param mixup_alpha:
+    :param cutmix_prob:
+    :param cutmix_alpha:
+    :param clipping: Gradient clipping https://github.com/pytorch/pytorch/issues/309#issuecomment-327304962
+    :return:
+    """
     net.train()
     sum_train_loss = 0
     sum_train = 0
@@ -430,6 +443,8 @@ def train(net, train_loader, optimizer, criterion, mixup_prob, mixup_alpha, cutm
             outputs = net(images)
             loss = mixup_criterion(outputs[0], outputs[1], outputs[2], targets)
             loss.backward()
+            if clipping != 9999:  # Gradient clipping
+                torch.nn.utils.clip_grad_norm(net.parameters(), clipping)
             optimizer.step()
             sum_train_loss += loss.item()
         else:
@@ -438,6 +453,8 @@ def train(net, train_loader, optimizer, criterion, mixup_prob, mixup_alpha, cutm
                 outputs = net(images)
                 loss = cutmix_criterion(outputs[0], outputs[1], outputs[2], targets)
                 loss.backward()
+                if clipping != 9999:  # Gradient clipping
+                    torch.nn.utils.clip_grad_norm(net.parameters(), clipping)
                 optimizer.step()
                 sum_train_loss += loss.item()
             else:
@@ -445,6 +462,8 @@ def train(net, train_loader, optimizer, criterion, mixup_prob, mixup_alpha, cutm
                 loss = criterion(outputs, targets)
                 (2 * loss[0] + loss[1] + loss[2]).backward()
                 optimizer.step()
+                if clipping != 9999:  # Gradient clipping
+                    torch.nn.utils.clip_grad_norm(net.parameters(), clipping)
                 sum_train_loss += (loss[0].item() + loss[1].item() + loss[2].item())
 
         sum_train += batch_size

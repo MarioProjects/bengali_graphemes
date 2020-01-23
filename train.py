@@ -39,11 +39,11 @@ criterion = select_criterion(args.criterion)
 log = Logger()
 initial_logs_simple(log, out_dir, COMMON_STRING, IDENTIFIER, SEED, args.model_checkpoint,
              args.batch_size, train_dataset, valid_dataset, optimizer, scheduler, net, args.epochs,
-             args.mixup_prob, args.mixup_alpha, args.cutmix_prob, args.cutmix_alpha)
+             args.mixup_prob, args.mixup_alpha, args.cutmix_prob, args.cutmix_alpha, args.grad_clipping)
 
 start_timer, best_metric = timer(), 0
 for epoch in range(args.epochs):
-    train_loss = train(net, train_loader, optimizer, criterion, args.mixup_prob, args.mixup_alpha, args.cutmix_prob, args.cutmix_alpha)
+    train_loss = train(net, train_loader, optimizer, criterion, args.mixup_prob, args.mixup_alpha, args.cutmix_prob, args.cutmix_alpha, args.grad_clipping)
     valid_loss, kaggle = valid(net, valid_loader, criterion, NUM_TASK)
 
     show_simple_stats(log, epoch, optimizer, start_timer, kaggle, train_loss, valid_loss)
