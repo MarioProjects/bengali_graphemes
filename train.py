@@ -38,8 +38,7 @@ criterion = select_criterion(args.criterion)
 
 log = Logger()
 initial_logs_simple(log, out_dir, COMMON_STRING, IDENTIFIER, SEED, args.model_checkpoint,
-             args.batch_size, train_dataset, valid_dataset, optimizer,
-             scheduler, args.scheduler, args.scheduler_decay, args.scheduler_step, net, args.epochs,
+             args.batch_size, train_dataset, valid_dataset, optimizer, scheduler, net, args.epochs,
              args.mixup_prob, args.mixup_alpha, args.cutmix_prob, args.cutmix_alpha, args.grad_clipping)
 
 start_timer, best_metric = timer(), 0
