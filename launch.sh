@@ -32,5 +32,5 @@ CUDA_VISIBLE_DEVICES=0,1 python3 -u train.py --epochs $epochs --batch_size $batc
     --model_name $model --head_name $head --validation_size $validation_size \
     --min_lr $min_lr --max_lr $max_lr --learning_rate $lr --optimizer $optimizer \
     --mixup_prob $mixup_prob --mixup_alpha $mixup_alpha --cutmix_prob $cutmix_prob --cutmix_alpha $cutmix_alpha \
-     --scheduler $scheduler --scheduler_step $scheduler_step --scheduler_decay $scheduler_decay
+    --scheduler $scheduler --scheduler_step $scheduler_step --scheduler_decay $scheduler_decay
     #--additional_info $additional_info
