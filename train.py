@@ -8,7 +8,7 @@ from utils.logging_functions import *
 from utils.kaggle import *
 from utils.onecyclelr import OneCycleLR
 from utils.radam import *
-
+from torchcontrib.optim import SWA
 
 train_df, valid_df = train_test_split(df, test_size=args.validation_size, shuffle=True, random_state=2019)
 
@@ -33,6 +33,7 @@ load_from_checkpoint(net, args.model_checkpoint)
 net = torch.nn.DataParallel(net, device_ids=range(torch.cuda.device_count()))
 
 optimizer = select_optimizer(args.optimizer, net, lr=args.learning_rate, momentum=args.momentum, weight_decay=args.weight_decay)
+if args.apply_swa: optimizer = SWA(optimizer, swa_start=0, swa_freq=1, swa_lr=args.min_lr)
 scheduler = select_scheduler(args.scheduler, optimizer, args.min_lr, args.max_lr, epochs=args.epochs, decay=args.scheduler_decay, step=args.scheduler_step)
 criterion = select_criterion(args.criterion)
 
@@ -58,4 +59,11 @@ for epoch in range(args.epochs):
         scheduler_step(args.scheduler, scheduler, optimizer, epoch)
 
 torch.save(net.state_dict(), out_dir + '/checkpoint/last_model.pth')
+
+if args.apply_swa:
+    torch.save(optimizer.state_dict(), args.output_dir + "/optimizer_" + args.model_name + "_last_before_swap.pt")
+    optimizer.swap_swa_sgd()
+    optimizer.bn_update(train_loader, net, device='cuda')
+    torch.save(net.state_dict(), args.output_dir + "/model_" + args.model_name + "_last_bn_update.pt")
+
 log.write('\n')

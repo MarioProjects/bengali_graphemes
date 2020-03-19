@@ -541,6 +541,7 @@ def scheduler_step(scheduler_type, scheduler, optimizer, epoch):
 
 
 def load_from_checkpoint(net, model_checkpoint):
+    print("Checkpoint! Loading from: {}".format(model_checkpoint))
     try:
         state_dict = torch.load(model_checkpoint)
         net.load_state_dict(state_dict, strict=True)

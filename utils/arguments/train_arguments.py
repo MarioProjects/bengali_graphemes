@@ -15,6 +15,7 @@ parser = argparse.ArgumentParser(
     formatter_class=SmartFormatter)
 
 parser.add_argument('--slack_resume', action='store_true', help='Send Slack message when train finish')
+parser.add_argument('--apply_swa', action='store_true', help='Apply SWA')
 parser.add_argument('--pretrained', action='store_true', help='Wheter use pretrained on Imagenet model or not')
 parser.add_argument('--batch_size', type=int, default=64, help='Batch Size for training')
 parser.add_argument('--epochs', type=int, default=40, help='Total number epochs for training')
@@ -75,3 +76,4 @@ if args.output_dir == "results/new_logs":
 
     if args.grad_clipping != 9999: args.output_dir = args.output_dir + "_gradClipping{}".format(args.grad_clipping)
     if args.pretrained: args.output_dir = args.output_dir + "_PRETRAINED"
+    if args.apply_swa: args.output_dir = args.output_dir + "_ApplySWA"
